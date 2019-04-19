@@ -20,6 +20,7 @@ Output:
 import os
 import gzip
 from sys import argv
+import matplotlib.pyplot as plt
 
 # Walks a path passed as an arugment and fills in dictionary
 # With application name key and .gz file path value pairs
@@ -42,16 +43,35 @@ def locate_logs(dir_path, gz_dict):
                 # Add this to the dictionary
                 gz_dict[app_tuple] = gz_path
 
+# Takes a list of DRAM util averages and kernel timing information
+# to print out DRAM plots
+def process_dram(dram_util_averages):
+    return
+
 # Opens a GPGPU-Sim visualizer file, reads it in, then parses the data
 # Takes a tuple of app-name and input, and path to the file as inputs
 def parse_log(app_tuple, gz_path):
     # Unpack the app name and input
     app_name, app_input = app_tuple
+    print(f"Parsing application {app_name}")
 
     # Value we will be collecting
+    # DRAM statistics
     dram_util_total = 0
     dram_num_channels = 0
-    dram_util_averages = []
+    dram_util_averages = [0.0]
+
+    # Clock statistics
+    sampling_period = 0
+    prev_cycles = 0
+    kernel_cycle_count = 0
+    total_cycle_count = 0
+    total_cycles = [0]
+    kernel_boundaries = []
+
+    # Instruction statistics
+    prev_instructions = 0
+    current_instructions = 0
 
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
@@ -81,6 +101,33 @@ def parse_log(app_tuple, gz_path):
                 # Add to the total and num channels
                 dram_num_channels += 1
                 dram_util_total += util_percent
+
+            # Gather cycle information
+            if "globalcyclecount" in line:
+                # Extract what we need from the line
+                dram_line = line.split()
+                cycles = int(dram_line[1])
+
+                # Need to calculate the sampling period
+                if prev_cycles == 0:
+                    sampling_period = cycles
+
+                # Check to see if it is the start of a new kernel
+                # Do it before total_cycle increment to assume it
+                # finished at the end of the last sample, not in
+                # the middle of the new sample (a bit conservative)
+                if prev_cycles != 0:
+                    if prev_cycles >= cycles:
+                        kernel_boundaries.append(total_cycle_count)
+
+                prev_cycles = cycles
+
+                # Increment the sampling period
+                total_cycle_count += sampling_period
+
+                # Add a new sample to our global time
+                total_cycles.append(total_cycle_count)
+
 
 def main():
     # Unpack the directory path from the command line arguments
