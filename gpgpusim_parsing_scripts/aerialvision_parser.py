@@ -73,6 +73,10 @@ def parse_log(app_tuple, gz_path):
     prev_instructions = 0
     ipc_values = [0]
 
+    # L1$ Stats
+    l1_read_hit_rate = [0.0]
+    l1_write_hit_rate = [0.0]
+
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
         for line in f:
@@ -140,6 +144,24 @@ def parse_log(app_tuple, gz_path):
 
                 # Save the instruction count for the next comparison
                 prev_instructions = current_instructions
+
+            # Gather L1 cache information
+            if "l1d_read_hit_rate_total" in line:
+                # Extract what we need from the line
+                l1_read_line = line.split()
+                if "nan" in l1_read_line[1]:
+                    l1_read_hit_rate.append(0)
+                else:
+                    l1_read_hit_rate.append(float(l1_read_line[1]))
+
+
+            if "l1d_write_hit_rate_total" in line:
+                # Extract what we need from the line
+                l1_write_line = line.split()
+                if "nan" in l1_write_line[1]:
+                    l1_write_hit_rate.append(0)
+                else:
+                    l1_write_hit_rate.append(float(l1_write_line[1]))
 
 
 def main():
