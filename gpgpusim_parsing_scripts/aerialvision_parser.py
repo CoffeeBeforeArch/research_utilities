@@ -48,12 +48,39 @@ def parse_log(app_tuple, gz_path):
     # Unpack the app name and input
     app_name, app_input = app_tuple
 
+    # Value we will be collecting
+    dram_util_total = 0
+    dram_num_channels = 0
+    dram_util_averages = []
+
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
         for line in f:
-            continue
+            # Gather each memory channels utilization statistics
+            if "dramutil" in line:
+                # Extract what we need from the line
+                dram_line = line.split()
+                channel = int(dram_line[1])
+                util_percent = int(dram_line[2])
 
-    print(lines[0])
+                # Check if we are starting over, or this is the first
+                # instance
+                if channel == 0:
+                    # Don't do useless calculations
+                    if dram_util_total == 0:
+                        dram_util_averages.append(0)
+                    # Handle where we have a non-0 average
+                    else:
+                        dram_util_total += util_percent
+                        dram_util_averages.append(dram_util_total / dram_num_channels)
+
+                    # Reset variables
+                    dram_num_channels = 0
+                    dram_util_total = 0
+
+                # Add to the total and num channels
+                dram_num_channels += 1
+                dram_util_total += util_percent
 
 def main():
     # Unpack the directory path from the command line arguments
