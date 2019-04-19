@@ -71,7 +71,7 @@ def parse_log(app_tuple, gz_path):
 
     # Instruction statistics
     prev_instructions = 0
-    current_instructions = 0
+    ipc_values = [0]
 
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
@@ -105,8 +105,8 @@ def parse_log(app_tuple, gz_path):
             # Gather cycle information
             if "globalcyclecount" in line:
                 # Extract what we need from the line
-                dram_line = line.split()
-                cycles = int(dram_line[1])
+                cycle_line = line.split()
+                cycles = int(cycle_line[1])
 
                 # Need to calculate the sampling period
                 if prev_cycles == 0:
@@ -127,6 +127,19 @@ def parse_log(app_tuple, gz_path):
 
                 # Add a new sample to our global time
                 total_cycles.append(total_cycle_count)
+
+            # Gather instruction information
+            if "globalinsncount" in line:
+                # Extract what we need from the line
+                insn_line = line.split()
+                current_instructions = int(insn_line[1])
+
+                # Calculate the IPC using the difference in instructions executed
+                ipc = (current_instructions - prev_instructions) / sampling_period
+                ipc_values.append(ipc)
+
+                # Save the instruction count for the next comparison
+                prev_instructions = current_instructions
 
 
 def main():
