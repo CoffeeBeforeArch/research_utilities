@@ -210,7 +210,7 @@ def parse_log(app_tuple, gz_path):
                 csv.write(f"{total_cycles[i]},{l1_read_hit_rate[i]}\n")
 
     with open(app_name + "_l1w" + ".csv", "w+") as csv:
-        csv.write("Cycle,Dram Average Util.\n")
+        csv.write("Cycle,L1 Write Hit Rate.\n")
         for i in range(len(total_cycles)):
             if(total_cycles[i] in kernel_boundaries):
                 csv.write(f"{total_cycles[i]},{l1_write_hit_rate[i]},{1}\n")
@@ -218,7 +218,7 @@ def parse_log(app_tuple, gz_path):
                 csv.write(f"{total_cycles[i]},{l1_write_hit_rate[i]}\n")
 
     with open(app_name + "_l2r" + ".csv", "w+") as csv:
-        csv.write("Cycle,L1 Read Hit Rate.\n")
+        csv.write("Cycle,L2 Read Hit Rate.\n")
         for i in range(len(total_cycles)):
             if(total_cycles[i] in kernel_boundaries):
                 csv.write(f"{total_cycles[i]},{l2_read_hit_rate[i]},{1}\n")
@@ -226,14 +226,12 @@ def parse_log(app_tuple, gz_path):
                 csv.write(f"{total_cycles[i]},{l2_read_hit_rate[i]}\n")
 
     with open(app_name + "_l2w" + ".csv", "w+") as csv:
-        csv.write("Cycle,Dram Average Util.\n")
+        csv.write("Cycle,L2 Write Hit Rate.\n")
         for i in range(len(total_cycles)):
             if(total_cycles[i] in kernel_boundaries):
                 csv.write(f"{total_cycles[i]},{l2_write_hit_rate[i]},{1}\n")
             else:
                 csv.write(f"{total_cycles[i]},{l2_write_hit_rate[i]}\n")
-
-
 
 def main():
     # Unpack the directory path from the command line arguments
