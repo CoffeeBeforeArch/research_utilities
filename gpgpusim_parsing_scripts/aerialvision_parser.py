@@ -77,6 +77,11 @@ def parse_log(app_tuple, gz_path):
     l1_read_hit_rate = [0.0]
     l1_write_hit_rate = [0.0]
 
+    # L2$ Stats
+    l2_read_hit_rate = [0.0]
+    l2_write_hit_rate = [0.0]
+    l2_read = 0
+    l2_write = 0
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
         for line in f:
@@ -95,7 +100,6 @@ def parse_log(app_tuple, gz_path):
                         dram_util_averages.append(0)
                     # Handle where we have a non-0 average
                     else:
-                        dram_util_total += util_percent
                         dram_util_averages.append(dram_util_total / dram_num_channels)
 
                     # Reset variables
@@ -162,6 +166,22 @@ def parse_log(app_tuple, gz_path):
                     l1_write_hit_rate.append(0)
                 else:
                     l1_write_hit_rate.append(float(l1_write_line[1]))
+
+    with open(app_name + "_dram" + ".csv", "w+") as csv:
+        csv.write("Cycle,Dram Average Util.,kernel_boundary\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{dram_util_averages[i]},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{dram_util_averages[i]}\n")
+
+    with open(app_name + "_ipc" + ".csv", "w+") as csv:
+        csv.write("Cycle,Dram Average Util.\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{ipc_values[i] / 5143},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{ipc_values[i] / 5143}\n")
 
 
 def main():
