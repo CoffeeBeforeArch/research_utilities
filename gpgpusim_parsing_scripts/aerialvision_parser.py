@@ -82,6 +82,8 @@ def parse_log(app_tuple, gz_path):
     l2_write_hit_rate = [0.0]
     l2_read = 0
     l2_write = 0
+    l2_accesses = 0
+
     # Read in the .gz logfile one line at a time
     with gzip.open(gz_path, "rt") as f:
         for line in f:
@@ -158,7 +160,6 @@ def parse_log(app_tuple, gz_path):
                 else:
                     l1_read_hit_rate.append(float(l1_read_line[1]))
 
-
             if "l1d_write_hit_rate_total" in line:
                 # Extract what we need from the line
                 l1_write_line = line.split()
@@ -166,6 +167,23 @@ def parse_log(app_tuple, gz_path):
                     l1_write_hit_rate.append(0)
                 else:
                     l1_write_hit_rate.append(float(l1_write_line[1]))
+
+            if "Ltwowritehit" in line:
+                l2_write = int(line.split()[1])
+
+            if "Ltworeadhit" in line:
+                l2_read = int(line.split()[1])
+
+            if "Ltwoaccesses" in line:
+                l2_accesses = int(line.split()[1])
+
+                # Append the hit rates
+                if l2_accesses == 0:
+                    l2_read_hit_rate.append(0)
+                    l2_write_hit_rate.append(0)
+                else:
+                    l2_read_hit_rate.append(l2_read/l2_accesses)
+                    l2_write_hit_rate.append(l2_write/l2_accesses)
 
     with open(app_name + "_dram" + ".csv", "w+") as csv:
         csv.write("Cycle,Dram Average Util.,kernel_boundary\n")
@@ -182,6 +200,39 @@ def parse_log(app_tuple, gz_path):
                 csv.write(f"{total_cycles[i]},{ipc_values[i] / 5143},{1}\n")
             else:
                 csv.write(f"{total_cycles[i]},{ipc_values[i] / 5143}\n")
+
+    with open(app_name + "_l1r" + ".csv", "w+") as csv:
+        csv.write("Cycle,L1 Read Hit Rate.\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{l1_read_hit_rate[i]},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{l1_read_hit_rate[i]}\n")
+
+    with open(app_name + "_l1w" + ".csv", "w+") as csv:
+        csv.write("Cycle,Dram Average Util.\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{l1_write_hit_rate[i]},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{l1_write_hit_rate[i]}\n")
+
+    with open(app_name + "_l2r" + ".csv", "w+") as csv:
+        csv.write("Cycle,L1 Read Hit Rate.\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{l2_read_hit_rate[i]},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{l2_read_hit_rate[i]}\n")
+
+    with open(app_name + "_l2w" + ".csv", "w+") as csv:
+        csv.write("Cycle,Dram Average Util.\n")
+        for i in range(len(total_cycles)):
+            if(total_cycles[i] in kernel_boundaries):
+                csv.write(f"{total_cycles[i]},{l2_write_hit_rate[i]},{1}\n")
+            else:
+                csv.write(f"{total_cycles[i]},{l2_write_hit_rate[i]}\n")
+
 
 
 def main():
