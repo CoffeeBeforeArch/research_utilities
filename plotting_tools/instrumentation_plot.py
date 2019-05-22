@@ -31,7 +31,6 @@ def parse_logs(log, name, thread_info):
             # Append the results to the tuple list
             thread_info.append((tid, list(map(int, bbv))))
 
-
 # Manhattan Distance calculations
 def manhattan_distance(tuples, thread_distances):
     # BBV we are comparing to all others
@@ -54,11 +53,6 @@ def manhattan_distance(tuples, thread_distances):
 
         # Append distances for 1 thread and all remaining threads
         thread_distances.append(d_list)
-
-
-
-
-
 
 def main():
     # Get the specific logfile as an argument
