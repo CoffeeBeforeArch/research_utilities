@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 # Parses the logs
 # Returns thread_info list with tuples of TID and BBV
-def parse_logs(log, name, thread_info):
+def parse_logs(log, name, warps, warp_info):
     with open(log, "r+") as l:
         lines = l.readlines()
 
@@ -16,69 +16,37 @@ def parse_logs(log, name, thread_info):
     for i, line in enumerate(lines):
         # First line is the kernel name
         if i == 0:
-            name = line
+            name.append(line)
         elif i == 1:
             continue
+        elif i == 2:
+            warps.append(int(line))
         # Remaining lines are BBVs
         else:
-            # Split the thread ID and BBV
-            split_line = line.split(",")
-            # Extract the TID
-            tid = split_line[0]
-            # Extract the BBV
-            bbv = split_line[1:-1]
-
-            # Append the results to the tuple list
-            thread_info.append((tid, list(map(int, bbv))))
-
-# Manhattan Distance calculations
-def manhattan_distance(tuples, thread_distances):
-    # BBV we are comparing to all others
-    for i,bbv_tuple1 in enumerate(tuples):
-        # List of distances for each thread
-        d_list = []
-        for j,bbv_tuple2 in enumerate(tuples):
-            # Accumulate distances for 1 thread
-            d = 0
-
-            # Compare each basic block
-            for k in range(len(bbv_tuple1[1])):
-                d += abs(bbv_tuple1[1][k] - bbv_tuple2[1][k])
-
-            # Append distance between two threads
-            if i > j:
-                d_list.append(10)
-            else:
-                d_list.append(d)
-
-        # Append distances for 1 thread and all remaining threads
-        thread_distances.append(d_list)
+            warp_info.append(map(int,line.split()))
 
 def main():
     # Get the specific logfile as an argument
     script,log = argv
+
     # Empty list that will be populated with thread BB distributions
-    thread_info = []
-    # Kernel name
-    name = ""
+    warp_info = []
+
+    # Kernel name and warps
+    name = []
+    warps = []
 
     # Parse the logs
-    parse_logs(log, name, thread_info)
-
-    # List of manhattan distances
-    m_distances = []
-
-    # Pass in tuples, get list of lists with the distances between threads
-    manhattan_distance(thread_info, m_distances)
+    parse_logs(log, name, warps, warp_info)
 
     # Convert to numpy array
-    n_array = np.array(m_distances)
+    n_array = np.array(warp_info[0]).reshape(warps[0], warps[0])
 
-    plt.imshow(n_array, cmap='hot', interpolation='nearest')
-    plt.xlabel("Thread i")
-    plt.ylabel("Thread i")
-    plt.title("Basic Block Comparison for Vector Addition")
-    plt.show()
+    plt.plot(n_array, cmap='hot', interpolation='nearest')
+    plt.xlabel("Warp i")
+    plt.ylabel("Warp j")
+    plt.title("Basic Block Comparison for kernel_name[0]")
+    plt.savefig("test.png")
 
 if __name__ == "__main__":
     main()

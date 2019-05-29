@@ -86,54 +86,67 @@ int main(int argc, char *argv[]){
         assert(false);
     }
 
-    // Read kernel name, # basic blocks, and # threads
+    // Variables to read in for each kernel of an app
     string kernel_name;
     unsigned n_bbs = 0;
-    unsigned n_threads = 0;
-    data_file >> kernel_name;
-    data_file >> n_bbs;
-    data_file >> n_threads;
+    unsigned n_warps = 0;
 
-    // Allocate space for all the basic blocks
+    // Unified memory pointer
     unsigned *basic_blocks;
-    cudaMallocManaged(&basic_blocks, n_bbs * n_threads * sizeof(unsigned));
 
-    // Read out the basic block distributions
-    read_file(data_file, n_bbs, n_threads, basic_blocks);
+    // While we can still read in a kernel name
+    while(getline(data_file, kernel_name)){
+        // Dumb error check to break on empty kernel name (EOF?)
+        if(kernel_name == "")
+            break;
+
+        // We should then get #BBs and #warps
+        data_file >> n_warps;
+        data_file >> n_bbs;
+
+        // Allocate space for all the basic blocks
+        cudaMallocManaged(&basic_blocks, n_bbs * n_warps * sizeof(unsigned));
+
+        // Read out the basic block distributions
+        read_file(data_file, n_bbs, n_warps, basic_blocks);
+
+        // Allocate space for the basic block differences
+        unsigned *distances;
+        cudaMallocManaged(&distances, n_warps * n_warps * sizeof(unsigned));
+
+        // Calculate grid dimensions using 512 thread TBs
+        int TB_SIZE = 512;
+        int GRID_SIZE = (n_warps + TB_SIZE - 1) / TB_SIZE;
+
+        // Launch the kernel
+        m_distance<<<GRID_SIZE, TB_SIZE>>>(basic_blocks, distances, n_bbs, n_warps);
+    
+        // Wait for the kernel to complete
+        cudaDeviceSynchronize();
+
+        // Open a file based on the kernel's name (truncate if exists)
+        string output_name = kernel_name;
+        output_name.append("1.txt");
+        ofstream output_file;
+        output_file.open(output_name.c_str(), ios::out | ios::app);
+    
+        // Add header to the output file
+        output_file << kernel_name << endl;
+        output_file << n_bbs << endl;
+        output_file << n_warps << endl;
+
+        // Write the output to a similarly formatted separate file
+        write_file(output_file, n_warps, distances);
+
+        // Close the output file
+        output_file.close();
+
+        // De-allocate unified memory
+        cudaFree(basic_blocks);
+    }
 
     // Close the data file
     data_file.close();
-
-    // Allocate space for the basic block differences
-    unsigned *distances;
-    cudaMallocManaged(&distances, n_threads * n_threads * sizeof(unsigned));
-
-    // Calculate grid dimensions using 512 thread TBs
-    int TB_SIZE = 512;
-    int GRID_SIZE = (n_threads + TB_SIZE - 1) / TB_SIZE;
-
-    // Launch the kernel
-    m_distance<<<GRID_SIZE, TB_SIZE>>>(basic_blocks, distances, n_bbs, n_threads);
-    
-    // Wait for the kernel to complete
-    cudaDeviceSynchronize();
-
-    // Open a file based on the kernel's name (truncate if exists)
-    string output_name = kernel_name;
-    output_name.append("1.txt");
-    ofstream output_file;
-    output_file.open(output_name.c_str(), ios::out | ios::trunc);
-    
-    // Add header to the output file
-    output_file << kernel_name << endl;
-    output_file << n_bbs << endl;
-    output_file << n_threads << endl;
-
-    // Write the output to a similarly formatted separate file
-    write_file(output_file, n_threads, distances);
-
-    // Close the output file
-    output_file.close();
 
     return 0;
 }
