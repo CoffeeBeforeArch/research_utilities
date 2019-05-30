@@ -5,6 +5,7 @@
 // By: Nick from CoffeeBeforeArch
 
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <assert.h>
@@ -94,11 +95,13 @@ int main(int argc, char *argv[]){
     // Unified memory pointer
     unsigned *basic_blocks;
 
+    // Unique kernel id
+    int kid = 0;
     // While we can still read in a kernel name
     while(getline(data_file, kernel_name)){
         // Dumb error check to break on empty kernel name (EOF?)
         if(kernel_name == "")
-            break;
+            continue;
 
         // We should then get #BBs and #warps
         data_file >> n_warps;
@@ -125,8 +128,10 @@ int main(int argc, char *argv[]){
         cudaDeviceSynchronize();
 
         // Open a file based on the kernel's name (truncate if exists)
-        string output_name = kernel_name;
-        output_name.append("1.txt");
+        string output_name = kernel_name.substr(0, kernel_name.find("("));
+        stringstream ss;
+        ss << kid;
+        output_name.append("_" + ss.str() + ".txt");
         ofstream output_file;
         output_file.open(output_name.c_str(), ios::out | ios::app);
     
@@ -143,6 +148,9 @@ int main(int argc, char *argv[]){
 
         // De-allocate unified memory
         cudaFree(basic_blocks);
+
+        // Increase kernel ID
+        kid++;
     }
 
     // Close the data file

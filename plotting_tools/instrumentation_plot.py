@@ -42,11 +42,17 @@ def main():
     # Convert to numpy array
     n_array = np.array(warp_info[0]).reshape(warps[0], warps[0])
 
-    plt.plot(n_array, cmap='hot', interpolation='nearest')
-    plt.xlabel("Warp i")
-    plt.ylabel("Warp j")
-    plt.title("Basic Block Comparison for kernel_name[0]")
-    plt.savefig("test.png")
+    name = log.split(".")[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    im = ax.imshow(n_array, cmap='hot', interpolation='nearest')
+    ax.set_xlabel("Warp i")
+    ax.set_ylabel("Warp j")
+    ax.set_title("Basic Block Comparison for kernel_name[0]")
+
+    cbar = figh.colorbar(ax=ax, mappable=im, orientation='horizontal')
+
+    plt.show()
 
 if __name__ == "__main__":
     main()
