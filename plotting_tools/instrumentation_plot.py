@@ -23,7 +23,7 @@ def parse_logs(log, name, warps, warp_info):
             warps.append(int(line))
         # Remaining lines are BBVs
         else:
-            warp_info.append(map(int,line.split()))
+            warp_info.append(line)
 
 def main():
     # Get the specific logfile as an argument
@@ -39,8 +39,11 @@ def main():
     # Parse the logs
     parse_logs(log, name, warps, warp_info)
 
+    m_distances = warp_info[0].split()
+    m_int_distances = map(int, m_distances)
+
     # Convert to numpy array
-    n_array = np.array(warp_info[0]).reshape(warps[0], warps[0])
+    n_array = np.array(list(m_int_distances)).reshape(warps[0], warps[0])
 
     name = log.split(".")[0]
     fig = plt.figure()
