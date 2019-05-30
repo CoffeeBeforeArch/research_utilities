@@ -53,7 +53,7 @@ def main():
     ax.set_ylabel("Warp j")
     ax.set_title("Basic Block Comparison for kernel_name[0]")
 
-    cbar = figh.colorbar(ax=ax, mappable=im, orientation='horizontal')
+    cbar = fig.colorbar(ax=ax, mappable=im, orientation='horizontal')
 
     plt.show()
 
