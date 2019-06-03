@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
     // While we can still read in a kernel name
     while(getline(data_file, kernel_name)){
         // Dumb error check to break on empty kernel name (EOF?)
-        if(kernel_name == "")
+        if(kernel_name.size() <= 1)
             continue;
 
         // We should then get #BBs and #warps
