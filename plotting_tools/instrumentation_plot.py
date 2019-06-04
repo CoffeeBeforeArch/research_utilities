@@ -32,9 +32,7 @@ def fmt(x, pos):
         b = int(b)
         return r'${} \times 10^{{{}}}$'.format(a, b)
 
-def main():
-    # Get the directories where the logfiles are located
-    script,directory = argv
+def heatmap(directory):
     for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
             if ".txt" in name:
@@ -48,6 +46,7 @@ def main():
                 print(os.path.join(root,name))
                 parse_logs(os.path.join(root,name), warps, warp_info)
 
+                # Conver the lines into integers
                 m_distances = warp_info[0].split()
                 m_int_distances = map(int, m_distances)
 
@@ -57,7 +56,7 @@ def main():
                 # Set up the name
                 name = name.split(".")[0]
 
-                # Set up the mask
+                # Set up the mask, and plot the heatmap
                 mask = np.tri(n_array.shape[0], k=-1)
                 n_array = np.ma.array(n_array, mask=mask)
                 fig = plt.figure()
@@ -67,11 +66,49 @@ def main():
                 ax.set_ylabel("Warp j")
                 ax.set_title("Manhattan Distance for: " + name)
 
+                # Add the colorbar
                 cbar = fig.colorbar(ax=ax, mappable=im, orientation='vertical', format=matplotlib.ticker.FuncFormatter(fmt))
                 cbar.set_label("Distance between warps")
 
+                # Save the figure
                 plt.savefig(name + ".png", dpi=500)
                 plt.close()
+
+
+
+def histogram(bbv_file):
+    lines = []
+    with open(bbv_file, "r") as f:
+        lines = f.readlines()
+
+    i = 0
+    while i < len(lines):
+        # First two lines are number of warps and
+        kernel_name = lines[i]
+        i += 1
+        num_warps = int(lines[i])
+        i += 1
+        num_bbs = int(lines[i])
+        i += 1
+
+        # Extract the bbs for a kernel and split them into lists
+        kernel_bbs = []
+        for i in range(i, i + num_warps):
+            kernel_bbs.append(lines[i].split())
+            i += 1
+
+        # Bin the basic blocks
+        numpy_kernel = np.array(kernel_bbs)
+        unique_elements, counts_elements = np.unique(numpy_kernel, return_counts=True)
+        for j in range(len(counts_elements)):
+            print(unique_elements[j], counts_elements[j])
+
+def main():
+    # Get the directories where the logfiles are located
+    script,directory = argv
+    histogram(directory)
+    #heatmap(directory)
+
 
 if __name__ == "__main__":
     main()
