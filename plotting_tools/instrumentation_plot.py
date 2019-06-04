@@ -78,13 +78,14 @@ def heatmap(directory):
 
 def histogram(bbv_file):
     lines = []
+    kid = 0
     with open(bbv_file, "r") as f:
         lines = f.readlines()
 
     i = 0
     while i < len(lines):
         # First two lines are number of warps and
-        kernel_name = lines[i]
+        kernel_name = lines[i].split("(")[0]
         i += 1
         num_warps = int(lines[i])
         i += 1
@@ -94,14 +95,25 @@ def histogram(bbv_file):
         # Extract the bbs for a kernel and split them into lists
         kernel_bbs = []
         for i in range(i, i + num_warps):
-            kernel_bbs.append(lines[i].split())
+            kernel_bbs.append(lines[i])
             i += 1
 
         # Bin the basic blocks
         numpy_kernel = np.array(kernel_bbs)
         unique_elements, counts_elements = np.unique(numpy_kernel, return_counts=True)
-        for j in range(len(counts_elements)):
-            print(unique_elements[j], counts_elements[j])
+
+        fig, ax = plt.subplots()
+        ax.bar(np.arange(len(counts_elements)), counts_elements, align='center', alpha=0.5)
+        ax.set_xlabel("BBV identifier")
+        ax.set_ylabel("Number of warps with identical BBV")
+        ax.set_title("BBV Distribution for: " + kernel_name)
+        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+
+        # Save the figure
+        plt.savefig(kernel_name + "_" + str(kid) + ".png", dpi=200)
+        plt.close()
+
+        kid += 1
 
 def main():
     # Get the directories where the logfiles are located
