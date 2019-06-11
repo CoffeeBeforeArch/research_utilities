@@ -35,7 +35,7 @@ def fmt(x, pos):
 def heatmap(directory):
     for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
-            if ".txt" in name:
+            if ".txt" in name and "bb_" not in name:
                 # Empty list that will be populated with thread BB distributions
                 warp_info = []
 
@@ -62,13 +62,13 @@ def heatmap(directory):
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 im = ax.imshow(n_array, cmap='hot', interpolation='nearest')
-                ax.set_xlabel("Warp i")
-                ax.set_ylabel("Warp j")
+                ax.set_xlabel("TB i")
+                ax.set_ylabel("TB j")
                 ax.set_title("Manhattan Distance for: " + name)
 
                 # Add the colorbar
                 cbar = fig.colorbar(ax=ax, mappable=im, orientation='vertical', format=matplotlib.ticker.FuncFormatter(fmt))
-                cbar.set_label("Distance between warps")
+                cbar.set_label("Distance between TBs")
 
                 # Save the figure
                 plt.savefig(name + ".png", dpi=500)
@@ -118,8 +118,8 @@ def histogram(bbv_file):
 def main():
     # Get the directories where the logfiles are located
     script,directory = argv
-    histogram(directory)
-    #heatmap(directory)
+    #histogram(directory)
+    heatmap(directory)
 
 
 if __name__ == "__main__":
