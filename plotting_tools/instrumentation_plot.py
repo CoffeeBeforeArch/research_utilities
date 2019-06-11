@@ -108,7 +108,9 @@ def histogram(bbv_file):
         ax.set_ylabel("Number of warps with identical BBV")
         ax.set_title("BBV Distribution for: " + kernel_name)
         ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-
+        minimum = 0
+        maximum = max(counts_elements)
+        ax.set_ylim([minimum,maximum])
         # Save the figure
         plt.savefig(kernel_name + "_" + str(kid) + ".png", dpi=200)
         plt.close()
