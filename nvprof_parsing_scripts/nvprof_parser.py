@@ -39,8 +39,11 @@ def process_csv(csv):
             continue
 
     total_exec_time = sum(exec_times)
-    for i in range(len(kernels)):
-        print(i, kernels[i], exec_times[i] / total_exec_time)
+
+    with open(application_name + "_exec_time.csv", "w+") as f:
+        for i in range(len(kernels)):
+            f.write(kernels[i] + "," + str(exec_times[i] / total_exec_time) + "\n")
+
 def main():
     # Unpack the command line arguments
     program,directory = argv
