@@ -32,7 +32,8 @@ def fmt(x, pos):
         b = int(b)
         return r'${} \times 10^{{{}}}$'.format(a, b)
 
-def heatmap(directory, exec_time_dir):
+def heatmap(directory):
+    """
     exec_time_dict = {}
     app_name = ""
     for root, dirs, files in os.walk(exec_time_dir):
@@ -44,6 +45,7 @@ def heatmap(directory, exec_time_dir):
                     lines = f.readlines()
 
                 exec_time_dict[app_name] = lines
+    """
 
     for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
@@ -70,14 +72,14 @@ def heatmap(directory, exec_time_dir):
 
                 # Get the application's name in order to look up exec time
                 app_name = root.split("/")[-2]
-                line_no  =  int(name.split(".")[0].split("_")[-1])
-                exec_lines = exec_time_dict[app_name]
+                #line_no  =  int(name.split(".")[0].split("_")[-1])
+                #exec_lines = exec_time_dict[app_name]
 
                 # Set up the mask, and plot the heatmap
                 mask = np.tri(n_array.shape[0], k=-1)
                 n_array = np.ma.array(n_array, mask=mask)
                 fig = plt.figure()
-                fig.suptitle("Exec % = " + str(float(exec_lines[line_no].split(",")[1]) * 100))
+                #fig.suptitle("Exec % = " + str(float(exec_lines[line_no].split(",")[1]) * 100))
                 ax = fig.add_subplot(111)
                 im = ax.imshow(n_array, cmap='hot', interpolation='nearest')
                 ax.set_xlabel("TB i")
@@ -92,54 +94,10 @@ def heatmap(directory, exec_time_dir):
                 plt.savefig(name + ".png", dpi=500)
                 plt.close()
 
-
-
-def histogram(bbv_file):
-    lines = []
-    kid = 0
-    with open(bbv_file, "r") as f:
-        lines = f.readlines()
-
-    i = 0
-    while i < len(lines):
-        # First two lines are number of warps and
-        kernel_name = lines[i].split("(")[0]
-        i += 1
-        num_warps = int(lines[i])
-        i += 1
-        num_bbs = int(lines[i])
-        i += 1
-
-        # Extract the bbs for a kernel and split them into lists
-        kernel_bbs = []
-        for i in range(i, i + num_warps):
-            kernel_bbs.append(lines[i])
-            i += 1
-
-        # Bin the basic blocks
-        numpy_kernel = np.array(kernel_bbs)
-        unique_elements, counts_elements = np.unique(numpy_kernel, return_counts=True)
-
-        fig, ax = plt.subplots()
-        ax.bar(np.arange(len(counts_elements)), counts_elements, align='center', alpha=0.5)
-        ax.set_xlabel("BBV identifier")
-        ax.set_ylabel("Number of warps with identical BBV")
-        ax.set_title("BBV Distribution for: " + kernel_name)
-        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-        minimum = 0
-        maximum = max(counts_elements)
-        ax.set_ylim([minimum,maximum])
-        # Save the figure
-        plt.savefig(kernel_name + "_" + str(kid) + ".png", dpi=200)
-        plt.close()
-
-        kid += 1
-
 def main():
     # Get the directories where the logfiles are located
-    script,log_dir,exec_time_dir = argv
-    #histogram(directory)
-    heatmap(log_dir, exec_time_dir)
+    script,log_dir = argv
+    heatmap(log_dir)
 
 
 if __name__ == "__main__":
