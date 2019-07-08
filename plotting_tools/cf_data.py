@@ -70,7 +70,7 @@ def cf_data(bbv_file):
         # Dump data to a logfile
         path = "/".join(bbv_file.split("/")[:-1])
         with open(path + "/" + individual_log, "a+") as f:
-            f.write(kernel_name.rstrip() + " " + str(len(unique_elements)) + "\n")
+            f.write(kernel_name.rstrip() + "/" + str(len(unique_elements)) + "\n")
 
         # Add them to the dictionary
         for x in unique_elements:
@@ -98,7 +98,7 @@ def cf_data(bbv_file):
     path = "/".join(bbv_file.split("/")[:-1])
     with open(path + "/" + aggregate_log, "a+") as f:
         for i in range(len(keys)):
-            f.write(keys[i] + " " + str(values[i]) + "\n")
+            f.write(keys[i] + "/" + str(values[i]) + "\n")
 
 def main():
     # Walk the directory finding all bb_log.txt files
