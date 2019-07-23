@@ -5,14 +5,12 @@ from sys import argv
 import os
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
-from scipy.cluster import hierarchy
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+import warnings
 
 def cluster(log_file):
     directory = "/".join(log_file.split("/")[:-1])
-    print(directory)
     app_name = log_file.split("/")[-2]
     # Dictionary to keep track of unique control flow paths
     unique_kernels = {}
@@ -41,28 +39,47 @@ def cluster(log_file):
         num_bbs = int(lines[i])
         i += 1
 
-        # Get the instruction count per basic block
-        insn_count = [int(x) for x in lines[i].rstrip().split()]
-        i += 1
-
         # Extract the bbs for a kernel and split them into lists
         kernel_bbs = []
-        for k in range(i, i + num_tbs):
-            kernel_bbs.append([int(x) for x in lines[k].rstrip().split()])
+        kernel_insns = []
+
+        end = i + num_tbs * 2 - 1
+        while i < end:
+            kernel_insns.append([int(lines[i])])
+            i += 1
+            kernel_bbs.append([float(x) for x in lines[i].rstrip().split()])
             i += 1
 
         X = np.array(kernel_bbs)
+        Y = np.array(kernel_insns)
         s_scores = []
         clusters = []
-        for k in range(2, 31):
-            if k >= num_tbs:
+
+        for k in range(2, 51):
+            # We don't need more clusters than basic blocks
+            if k > num_tbs:
                 break
-            clustering = AgglomerativeClustering(n_clusters=k).fit_predict(X)
+
+            # Cluster based on KMeans
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                clustering = KMeans(n_clusters=k).fit_predict(Y)
+                if(len(w)):
+                    break
+
+            # Calculate silhouette score for bot
             s_avg = silhouette_score(X, clustering)
+
+            # Track the cluster
             clusters.append(k)
+
+            # Track the score
             s_scores.append(s_avg)
+
+            # Write the scores
             with open(directory + "/" + kernel_name + "_" + str(kid) +"_clustering_scores" + ".txt", "a+") as f:
                 f.write(str(k) + "," + str(s_avg) + "\n")
+
 
         if len(s_scores) != 0:
             max_index = s_scores.index(max(s_scores))
@@ -75,7 +92,7 @@ def cluster(log_file):
                 f.write(str(dy)+"\n")
                 for j in clustering:
                     f.write(str(j) + " ")
-                    f.write("\n")
+                f.write("\n")
         kid += 1
 
 
