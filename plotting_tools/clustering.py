@@ -8,6 +8,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
 import warnings
+import statistics as st
 
 def cluster(log_file):
     directory = "/".join(log_file.split("/")[:-1])
@@ -21,6 +22,8 @@ def cluster(log_file):
     with open(log_file, "r") as f:
         lines = f.readlines()
 
+    kmeans_sse = {}
+    kmeans_max_clusters = {}
     # Go over all the lines using a while loop
     i = 0
     while i < len(lines):
@@ -50,51 +53,60 @@ def cluster(log_file):
             kernel_bbs.append([float(x) for x in lines[i].rstrip().split()])
             i += 1
 
-        X = np.array(kernel_bbs)
         Y = np.array(kernel_insns)
         s_scores = []
         clusters = []
+        sse_list = []
+        k_list = []
+        with open(directory + "/" + app_name + "_sse.txt", "a+") as f:
+            f.write(kernel_name.rstrip() + "_" + str(kid) +"_" + str(num_tbs) +"\n")
 
-        for k in range(2, 51):
-            # We don't need more clusters than basic blocks
-            if k > num_tbs:
-                break
-
-            # Cluster based on KMeans
+        k = 0
+        while True:
             with warnings.catch_warnings(record=True) as w:
+                k += 1
+
+                # We don't need more clusters than basic blocks
+                if k > num_tbs:
+                    break
+
+                # Cluster based on KMeans
                 warnings.simplefilter("always")
-                clustering = KMeans(n_clusters=k).fit_predict(Y)
+                km = KMeans(n_clusters=k)
+                clustering = km.fit_predict(Y)
                 if(len(w)):
                     break
 
-            # Calculate silhouette score for bot
-            s_avg = silhouette_score(X, clustering)
+                sse = km.inertia_
+                sse_list.append(sse)
+                k_list.append(k)
+                with open(directory + "/" + app_name + "_sse.txt", "a+") as f:
+                    f.write(str(k) + "," + str(sse) + "\n")
 
-            # Track the cluster
-            clusters.append(k)
+        if kernel_name not in kmeans_sse:
+            kmeans_sse[kernel_name] = []
+            kmeans_max_clusters[kernel_name] = []
 
-            # Track the score
-            s_scores.append(s_avg)
-
-            # Write the scores
-            with open(directory + "/" + kernel_name + "_" + str(kid) +"_clustering_scores" + ".txt", "a+") as f:
-                f.write(str(k) + "," + str(s_avg) + "\n")
-
-
-        if len(s_scores) != 0:
-            max_index = s_scores.index(max(s_scores))
-            k = clusters[max_index]
-
-            clustering = AgglomerativeClustering(n_clusters=k).fit_predict(X)
-            with open(directory + "/" + kernel_name + "_" + str(kid) +"_clustering_" + str(k) + "_labels" + ".txt", "a+") as f:
-                f.write(kernel_name+"\n")
-                f.write(str(dx)+"\n")
-                f.write(str(dy)+"\n")
-                for j in clustering:
-                    f.write(str(j) + " ")
-                f.write("\n")
+        kmeans_sse[kernel_name].append(sse_list[-1])
+        kmeans_max_clusters[kernel_name].append(k_list[-1])
         kid += 1
 
+    with open(directory + "/" + app_name + "_stats.txt", "a+") as f:
+        f.write("Kernel SSE,mean,stdev\n")
+        for k,v in kmeans_sse.items():
+            f.write(k.rstrip())
+            f.write("," + str(st.mean(v)) + ",")
+            if(len(v) > 1):
+                f.write(str(st.stdev(v)))
+            f.write("\n")
+
+        f.write("N clusters,mean,stdev\n")
+        for k,v in kmeans_max_clusters.items():
+            f.write(k.rstrip())
+            f.write("," + str(st.mean(v)) + ",")
+            if(len(v) > 1):
+                f.write(str(st.stdev(v)))
+            f.write("\n")
 
 def main():
     script,base_dir = argv
