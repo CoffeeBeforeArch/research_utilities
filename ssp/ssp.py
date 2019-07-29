@@ -6,25 +6,49 @@ import os
 import numpy as np
 
 # Helper function to unpack the logfile
-def parse_kernel(log):
+def parse_kernel(kernel, k_name, dim, i_counts, bbs):
+    # Read all the lines in
     lines = []
-    with open(log, 'r') as f:
+    with open(kernel, 'r') as f:
         lines = f.readlines()
-    return lines
+
+    # Unpack the data
+    i = 0
+    k_name.append(lines[i])
+    i += 1
+
+    # Get the kernel dimensions
+    dim.append(int(lines[i]));
+    i += 1
+    dim.append(int(lines[i]));
+    i += 1
+
+    # Get the basic block (remove this probably)
+    bb = int(lines[i])
+    i += 1
+
+    # Unpack the insns counts and bbv info
+    while(i < len(lines)):
+        i_counts.append([int(lines[i])])
+        i += 1
+        bbs.append([float(x) for x in lines[i].rstrip().split()])
+        i += 1
 
 # Clustering function
 def cluster(app, logs):
     # Unpack each kernel
     for kernel in logs:
+        # Arrays to be filled by parse_kernel
+        k_name = []
+        dim = []
         i_counts = []
         bbs = []
-        dim = []
 
-
-
+        # Unpack each kernel
+        parse_kernel(kernel, k_name, dim, i_counts, bbs)
 
 # Find all the log files and create a dict of apps and file paths
-def get_logs(i_dir, apps_logs):
+def get_logs(i_dir, app_logs):
     # Walk the input directory to find the bb_log files
     for r, d, f in os.walk(i_dir):
         # Each app gets an entry in the dict
