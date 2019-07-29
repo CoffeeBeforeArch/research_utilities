@@ -2,8 +2,12 @@
 # By Nick from CoffeeBeforeArch
 
 from sys import argv
-import os
 import numpy as np
+import os
+import math
+import random
+
+VOLTA_SMS = 80
 
 # Helper function to unpack the logfile
 def parse_kernel(kernel, k_name, dim, i_counts, bbs):
@@ -29,13 +33,13 @@ def parse_kernel(kernel, k_name, dim, i_counts, bbs):
 
     # Unpack the insns counts and bbv info
     while(i < len(lines)):
-        i_counts.append([int(lines[i])])
+        i_counts.append(int(lines[i]))
         i += 1
         bbs.append([float(x) for x in lines[i].rstrip().split()])
         i += 1
 
 # Clustering function
-def cluster(app, logs):
+def cluster_naive(app, logs):
     # Unpack each kernel
     for kernel in logs:
         # Arrays to be filled by parse_kernel
@@ -46,6 +50,38 @@ def cluster(app, logs):
 
         # Unpack each kernel
         parse_kernel(kernel, k_name, dim, i_counts, bbs)
+
+        # Get the total number of TBs
+        num_tbs = dim[0] * dim[1]
+        print(num_tbs)
+
+        # Get total instruction count
+        total = sum(i_counts)
+
+        # Weigh each cluster by instruction count
+        values = np.unique(i_counts)
+        weighted_values = []
+        indices = []
+        for v in values:
+            # Find all indices with this i-count
+            tmp = np.where(i_counts == v)[0]
+
+            # Multiply by number of instructions
+            weight = len(tmp) * v / total
+
+            # Append the weighted values and indices
+            indices.append(tmp)
+            weighted_values.append(weight)
+
+        # Calculate max TBs for this kernel
+
+
+        # Calculate the number of TBs from each cluster
+        tbs_per_cluster = []
+        for w in weighted_values:
+            continue
+
+
 
 # Find all the log files and create a dict of apps and file paths
 def get_logs(i_dir, app_logs):
@@ -83,7 +119,7 @@ def main():
 
     # Unpack the files
     for app, logs in app_logs.items():
-        cluster(app, logs)
+        cluster_naive(app, logs)
 
 if __name__ == "__main__":
     main()
