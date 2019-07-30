@@ -13,11 +13,13 @@ VOLTA_SMS = 80
 def launch_app():
     return
 
+# Goes through all benchmarks in the YAML file and launches all apps
+# with all set inputs
 def launch_benchmarks(yaml_file):
     # Load in entire dict from the yaml
     yaml_dict = {}
     with open(yaml_file, 'r') as f:
-        yaml_dict = yaml.load(f, Loader=yaml.FullLoader)
+        yaml_dict = yaml.load(f)
 
     # Launch each of the benchmarks
     for bench, bench_dict in yaml_dict.items():
@@ -32,13 +34,38 @@ def launch_benchmarks(yaml_file):
         # Go over all the apps for this benchmark
         for exec_dicts in bench_dict["execs"]:
             for app, inputs in exec_dicts.items():
+                # Create the full path to the app
+                app_path = exec_dir + app
+
                 # Make a directory for each app we see if it doesn't exist
                 app_dir = bench + "/" + app
                 if not os.path.exists(app_dir):
                     os.makedirs(app_dir)
 
                 # Go over all the inputs for this application
-                for i in inputs:
+                for arg in inputs:
+                    final_arg = str(arg)
+                    # Need to add data path to input data
+                    if "./data" in final_arg:
+                        # Not super flexible...
+                        final_arg = final_arg.split("/")
+                        tmp_list = []
+
+                        # Add data dir before relative path
+                        for item in final_arg:
+                            if str(item) == "data":
+                                tmp_list.append(data_dir + item)
+                            else:
+                                tmp_list.append(item)
+
+                        # Join the string back together
+                        final_arg = "/".join(tmp_list)
+
+                    print(app_path + " " + final_arg)
+
+
+
+
                     continue
 
 # Helper function to unpack the logfile
