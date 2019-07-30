@@ -13,8 +13,8 @@
 # If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
 
 rodinia-3.1:
-    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "./paper_apps/executables/"
+    data_dirs: "./paper/data/"
     execs:
         - b+tree-rodinia-3.1:
             - file ./data/mil.txt command ./data/command.txt
