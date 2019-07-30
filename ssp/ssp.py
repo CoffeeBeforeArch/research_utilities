@@ -6,8 +6,40 @@ import numpy as np
 import os
 import math
 import random
+import yaml
 
 VOLTA_SMS = 80
+
+def launch_app():
+    return
+
+def launch_benchmarks(yaml_file):
+    # Load in entire dict from the yaml
+    yaml_dict = {}
+    with open(yaml_file, 'r') as f:
+        yaml_dict = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Launch each of the benchmarks
+    for bench, bench_dict in yaml_dict.items():
+        # Create a directory for each benchmark suite
+        if not os.path.exists(bench):
+            os.makedirs(bench)
+
+        # Get the directories for launching the apps
+        exec_dir = bench_dict["exec_dir"]
+        data_dir = bench_dict["data_dirs"]
+
+        # Go over all the apps for this benchmark
+        for exec_dicts in bench_dict["execs"]:
+            for app, inputs in exec_dicts.items():
+                # Make a directory for each app we see if it doesn't exist
+                app_dir = bench + "/" + app
+                if not os.path.exists(app_dir):
+                    os.makedirs(app_dir)
+
+                # Go over all the inputs for this application
+                for i in inputs:
+                    continue
 
 # Helper function to unpack the logfile
 def parse_kernel(kernel, k_name, dim, i_counts, bbs):
@@ -105,21 +137,22 @@ def get_logs(i_dir, app_logs):
 def main():
     # Unpack the input and out directory arguments
     # Needs error to ensure that unpacking succeeds
-    script, i_dir, o_dir = argv
+    #script, i_dir, o_dir = argv
 
     # Create a dict of app names keys and list of log file value
-    app_logs = {}
-    get_logs(i_dir, app_logs)
+    #app_logs = {}
+    #get_logs(i_dir, app_logs)
 
     # Check to see if we already created the output dir on a previous
     # launch. If not, create it.
-    o_dir += '/ssp'
-    if not os.path.exists(o_dir):
-        os.makedirs(o_dir)
+    #o_dir += '/ssp'
+    #if not os.path.exists(o_dir):
+    #    os.makedirs(o_dir)
 
     # Unpack the files
-    for app, logs in app_logs.items():
-        cluster_naive(app, logs)
+    #for app, logs in app_logs.items():
+    #    cluster_naive(app, logs)
 
+    launch_benchmarks("apps.yml")
 if __name__ == "__main__":
     main()
