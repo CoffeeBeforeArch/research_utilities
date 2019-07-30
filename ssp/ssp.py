@@ -2,6 +2,7 @@
 # By Nick from CoffeeBeforeArch
 
 from sys import argv
+import subprocess as sp
 import numpy as np
 import os
 import math
@@ -10,8 +11,11 @@ import yaml
 
 VOLTA_SMS = 80
 
-def launch_app():
-    return
+# Launch each app and copy the data
+def launch_app(launch_string, app_dir):
+    p = sp.Popen(launch_string, env=os.environ, shell=True)
+    p.wait()
+    sp.call("mv bb_log* " + app_dir + "/.", shell=True)
 
 # Goes through all benchmarks in the YAML file and launches all apps
 # with all set inputs
@@ -30,6 +34,7 @@ def launch_benchmarks(yaml_file):
         # Get the directories for launching the apps
         exec_dir = bench_dict["exec_dir"]
         data_dir = bench_dict["data_dirs"]
+        launch_arg = bench_dict["param"]
 
         # Go over all the apps for this benchmark
         for exec_dicts in bench_dict["execs"]:
@@ -54,19 +59,18 @@ def launch_benchmarks(yaml_file):
                         # Add data dir before relative path
                         for item in final_arg:
                             if str(item) == "data":
-                                tmp_list.append(data_dir + item)
+                                tmp_list.append(data_dir)
+                                tmp_list.append(app)
+                                tmp_list.append(item)
                             else:
                                 tmp_list.append(item)
 
                         # Join the string back together
                         final_arg = "/".join(tmp_list)
 
-                    print(app_path + " " + final_arg)
-
-
-
-
-                    continue
+                    # Launch the applications (Also copies the logs)
+                    launch_string = "LD_PRELOAD=" + launch_arg + " " + app_path + " " + final_arg
+                    launch_app(launch_string, app_dir)
 
 # Helper function to unpack the logfile
 def parse_kernel(kernel, k_name, dim, i_counts, bbs):
