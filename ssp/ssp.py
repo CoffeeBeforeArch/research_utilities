@@ -9,7 +9,13 @@ import math
 import random
 import yaml
 
-VOLTA_SMS = 80
+# Read the YAML File in
+def read_yaml(yaml_file):
+    # Load in entire dict from the yaml
+    yaml_dict = {}
+    with open(yaml_file, 'r') as f:
+        yaml_dict = yaml.load(f)
+    return yaml_dict
 
 # Launch each app and copy the data
 def launch_app(launch_string, app_dir):
@@ -19,12 +25,7 @@ def launch_app(launch_string, app_dir):
 
 # Goes through all benchmarks in the YAML file and launches all apps
 # with all set inputs
-def launch_benchmarks(yaml_file):
-    # Load in entire dict from the yaml
-    yaml_dict = {}
-    with open(yaml_file, 'r') as f:
-        yaml_dict = yaml.load(f)
-
+def launch_benchmarks(yaml_dict):
     # Launch each of the benchmarks
     for bench, bench_dict in yaml_dict.items():
         # Create a directory for each benchmark suite
@@ -101,7 +102,15 @@ def parse_kernel(kernel, k_name, dim, i_counts, bbs):
         bbs.append([float(x) for x in lines[i].rstrip().split()])
         i += 1
 
-# Clustering function
+# Calculates max TBs per SM
+def max_tbs():
+    return
+
+# Performs clustering using some algorithm
+def cluster_advanced(app, logs):
+    return
+
+# Clustering function based on exact matches
 def cluster_naive(app, logs):
     # Unpack each kernel
     for kernel in logs:
@@ -116,7 +125,6 @@ def cluster_naive(app, logs):
 
         # Get the total number of TBs
         num_tbs = dim[0] * dim[1]
-        print(num_tbs)
 
         # Get total instruction count
         total = sum(i_counts)
@@ -130,21 +138,17 @@ def cluster_naive(app, logs):
             tmp = np.where(i_counts == v)[0]
 
             # Multiply by number of instructions
-            weight = len(tmp) * v / total
-
+            weight = float((len(tmp) * v)) / total
             # Append the weighted values and indices
             indices.append(tmp)
             weighted_values.append(weight)
 
         # Calculate max TBs for this kernel
 
-
         # Calculate the number of TBs from each cluster
         tbs_per_cluster = []
         for w in weighted_values:
             continue
-
-
 
 # Find all the log files and create a dict of apps and file paths
 def get_logs(i_dir, app_logs):
@@ -163,27 +167,37 @@ def get_logs(i_dir, app_logs):
                     if app in r:
                         app_logs[app].append(r + '/' + name)
 
-
-
 def main():
-    # Unpack the input and out directory arguments
-    # Needs error to ensure that unpacking succeeds
-    #script, i_dir, o_dir = argv
+    # Read out the yaml file to get executable and data dirs
+    yaml_file = "apps.yml"
+    yaml_dict = read_yaml(yaml_file)
 
-    # Create a dict of app names keys and list of log file value
-    #app_logs = {}
-    #get_logs(i_dir, app_logs)
+    # Keys contain the output directories
+    i_dirs = yaml_dict.keys()
 
-    # Check to see if we already created the output dir on a previous
-    # launch. If not, create it.
-    #o_dir += '/ssp'
-    #if not os.path.exists(o_dir):
-    #    os.makedirs(o_dir)
+    # If we are not analyzing a specific directory, go ahead and run
+    # the benchmarks
+    #if len(argv) == 1:
+    #    launch_benchmarks(yaml_dict)
 
-    # Unpack the files
-    #for app, logs in app_logs.items():
-    #    cluster_naive(app, logs)
 
-    launch_benchmarks("apps.yml")
+    for i_dir in i_dirs:
+        # Create a dict of app names keys and list of log file value
+        app_logs = {}
+        get_logs(i_dir, app_logs)
+
+        # Check to see if we already created the output dir on a previous
+        # launch. If not, create it.
+        o_dir = i_dir + '-ssp'
+        if not os.path.exists(o_dir):
+            os.makedirs(o_dir)
+
+        # Unpack the files
+        for app, logs in app_logs.items():
+            if "irregular" in i_dir:
+                cluster_advanced(app, logs)
+            elif "regular" in i_dir:
+                cluster_naive(app, logs)
+
 if __name__ == "__main__":
     main()
