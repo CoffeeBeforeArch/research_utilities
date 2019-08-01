@@ -214,12 +214,12 @@ def cluster_naive(app, logs, profile):
             continue
 
 # Find all the log files and create a dict of apps and file paths
-def get_logs(i_dir, app_logs, app_prof):
+def get_logs(i_dir, execs, app_logs, app_prof):
     # Walk the input directory to find the bb_log files
     for r, d, f in os.walk(i_dir):
         # Each app gets an entry in the dict
         for app in d:
-            if app not in app_logs.keys():
+            if app not in app_logs.keys() and app in execs:
                 app_logs[app] = []
                 app_prof[app] = ""
 
@@ -228,11 +228,11 @@ def get_logs(i_dir, app_logs, app_prof):
             # Hard coded file name for now
             if("bb_log" in name):
                 for app in app_logs.keys():
-                    if app in r:
+                    if app in r and app in execs:
                         app_logs[app].append(r + '/' + name)
             elif("nvprof" in name):
                 for app in app_prof.keys():
-                    if app in r:
+                    if app in r and app in execs:
                         app_prof[app] = r + '/' + name
 
 def main():
@@ -252,7 +252,8 @@ def main():
         # Create a dict of app names keys and list of log file value
         app_logs = {}
         app_prof = {}
-        get_logs(i_dir, app_logs, app_prof)
+        execs = [item.keys()[0] for item in yaml_dict[i_dir]["execs"]]
+        get_logs(i_dir, execs, app_logs, app_prof)
 
         # Check to see if we already created the output dir on a previous
         # launch. If not, create it.
