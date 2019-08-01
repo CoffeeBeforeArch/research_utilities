@@ -16,7 +16,24 @@ import yaml
 import csv
 # For random selection from clusters
 import random
-import pprint
+
+# Some parameter info for Volta
+volta_sms = 80
+
+threads_per_warp = 32
+warps_per_sm = 64
+threads_per_sm = 2048
+shmem_per_sm = 98304
+
+register_file_size = 65536
+register_allocation_unit_size = 256
+
+max_registers_per_thread = 255
+shmem_allocation_unit_size = 256
+warp_allocation_granularity = 4
+max_tb_size = 1024
+max_tb_per_sm = 32
+
 # Read in the nvprof input as a dictionary
 def read_profile(nvprof_file):
     lines = []
@@ -57,10 +74,65 @@ def parse_profile(profile, grid, block, regs, s_shmem, d_shmem):
             s_shmem.append((float(line[s_shmem_i]),units[s_shmem_i]))
             d_shmem.append((float(line[d_shmem_i]),units[d_shmem_i]))
 
+def my_ceil(a, b):
+    return math.ceil(a * b) / b
+
+def my_floor(a, b):
+    return math.floor(a * b) / b
+
+# Recursive function to return gcd of a and b
+def gcd(a,b):
+    if a == 0:
+        return b
+    return gcd(b % a, a)
+
+# Function to return LCM of two numbers
+def lcm(a,b):
+    return (a*b) / gcd(a,b)
+
+def block_warps(threads_per_block):
+    return math.ceil(threads_per_block / float(threads_per_warp))
+
+def block_registers(threads_per_block, regs):
+    return my_ceil(regs * threads_per_warp, register_allocation_unit_size) * block_warps(threads_per_block)
+
+def sm_regs(regs):
+    return my_floor(register_file_size / my_ceil(regs * threads_per_warp, register_allocation_unit_size), warp_allocation_granularity) * my_ceil(regs * threads_per_warp, register_allocation_unit_size)
+
+def block_shared_memory(shmem):
+    return my_ceil(shmem, shmem_allocation_unit_size)
+
+def tb_warp_limit(threads_per_block):
+    return min(max_tb_per_sm, math.floor(warps_per_sm / block_warps(threads_per_block)))
+
+def reg_limit(regs, threads_per_block):
+    return math.floor(sm_regs(regs) / block_registers(threads_per_block, regs))
+
+def shmem_limit(shmem):
+    if(shmem > 0):
+        return math.floor(shmem_per_sm / block_shared_memory(shmem))
+    else:
+        return max_tb_per_sm
+
 # Calculate max occupancy per-SM
 def max_occupancy(blocks, regs, s_shmem, d_shmem):
-    print(blocks, regs, s_shmem, d_shmem)
-    return
+    # Calculate # warps
+    threads_per_block = blocks[0] * blocks[1] * blocks[2]
+
+    # Calculate shmem per warp
+    shmem = 0
+    if "K"  in s_shmem[1]:
+        shmem += 1024 * s_shmem[0]
+    else:
+        shmem += s_shmem[0]
+
+    if "K"  in d_shmem[1]:
+        shmem += 1024 * d_shmem[0]
+    else:
+        shmem += d_shmem[0]
+
+    # Calculate
+    return min(tb_warp_limit(threads_per_block), reg_limit(regs, threads_per_block), shmem_limit(shmem))
 
 # Read the YAML File in
 def read_yaml(yaml_file):
@@ -205,11 +277,15 @@ def cluster_naive(app, logs, profile):
             indices.append(tmp)
             weighted_values.append(weight)
 
-        # Calculate max TBs for this kernel
+        # Calculate max TBs per sm for this kernel
         max_per_sm = max_occupancy(blocks[i], regs[i], s_shmem[i], d_shmem[i])
+
+        # Calculate the max TBs for a fully occupied GPU
+        sub_grid_tbs = max_per_sm * volta_sms
 
         # Calculate the number of TBs from each cluster
         tbs_per_cluster = []
+
         for w in weighted_values:
             continue
 
