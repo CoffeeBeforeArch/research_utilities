@@ -265,10 +265,12 @@ def cluster_naive(app, logs, profile):
         # Weigh each cluster by instruction count
         values = np.unique(i_counts)
         weighted_values = []
+        clusters = []
         indices = []
         for v in values:
             # Find all indices with this i-count
             tmp = np.where(i_counts == v)[0]
+            clusters.append(tmp)
 
             # Multiply by number of instructions
             weight = float((len(tmp) * v)) / total
@@ -283,11 +285,23 @@ def cluster_naive(app, logs, profile):
         # Calculate the max TBs for a fully occupied GPU
         sub_grid_tbs = max_per_sm * volta_sms
 
-        # Calculate the number of TBs from each cluster
+        # Calculate the MAX number of TBs from each cluster
         tbs_per_cluster = []
-
         for w in weighted_values:
-            continue
+            tbs_per_cluster.append(math.ceil(sub_grid_tbs * w))
+
+        # Choose sequential for now
+        ssp_clusters = [[] for x in tbs_per_cluster]
+        for j, tbs in enumerate(tbs_per_cluster):
+            print(tbs, int(tbs), len(clusters[j]))
+            if tbs > len(cluster[j])
+            for k in range(int(tbs)):
+                ssp_clusters[j].append(clusters[j][k])
+
+        print(k_name[0].rstrip())
+        print(weighted_values)
+        print(tbs_per_cluster)
+        print(ssp_clusters)
 
 # Find all the log files and create a dict of apps and file paths
 def get_logs(i_dir, execs, app_logs, app_prof):
