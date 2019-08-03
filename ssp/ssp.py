@@ -292,13 +292,20 @@ def cluster_naive(app, logs, profile):
 
         # Choose sequential for now
         ssp_clusters = [[] for x in tbs_per_cluster]
-        for j, tbs in enumerate(tbs_per_cluster):
-            print(tbs, int(tbs), len(clusters[j]))
-            if tbs > len(cluster[j])
-            for k in range(int(tbs)):
-                ssp_clusters[j].append(clusters[j][k])
+        remaining_tbs = sub_grid_tbs
+        while remaining_tbs > 0:
+            for j, tbs in enumerate(tbs_per_cluster):
+                for k in range(min(int(tbs), len(clusters[j]))):
+                    ssp_clusters[j].append(clusters[j][k])
+                    remaining_tbs -= 1
+                    if remaining_tbs == 0:
+                        break
+                if remaining_tbs == 0:
+                    break
+            break
 
         print(k_name[0].rstrip())
+        print(grids[i][0] * grids[i][1] * grids[i][2])
         print(weighted_values)
         print(tbs_per_cluster)
         print(ssp_clusters)
@@ -335,8 +342,8 @@ def main():
 
     # If we are not analyzing a specific directory, go ahead and run
     # the benchmarks
-    #if len(argv) == 1:
-    #    launch_benchmarks(yaml_dict)
+    if len(argv) == 1:
+        launch_benchmarks(yaml_dict)
 
     for i_dir in i_dirs:
         # Create a dict of app names keys and list of log file value
