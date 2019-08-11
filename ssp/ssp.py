@@ -16,6 +16,10 @@ import yaml
 import csv
 # For random selection from clusters
 import random
+# For plotting
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # Some parameter info for Volta
 volta_sms = 80
@@ -210,7 +214,7 @@ def launch_benchmarks(yaml_dict):
 
 
 # Helper function to unpack the logfile
-def parse_kernel(kernel, k_name, i_counts, bbs):
+def parse_kernel(kernel, k_name, bbs):
     # Read all the lines in
     lines = []
     with open(kernel, 'r') as f:
@@ -223,14 +227,36 @@ def parse_kernel(kernel, k_name, i_counts, bbs):
 
     # Unpack the insns counts and bbv info
     while(i < len(lines)):
-        i_counts.append(int(lines[i]))
-        i += 1
-        bbs.append([float(x) for x in lines[i].rstrip().split()])
+        bbs.append([int(x) for x in lines[i].rstrip().split()])
         i += 1
 
 # Calculates max TBs per SM
 def max_tbs():
     return
+
+def plot_irregular(app, logs):
+    # Unpack each kernel
+    for i, kernel in enumerate(logs):
+        print(app)
+        # Arrays to be filled by parse_kernel
+        k_name = []
+        bbs = []
+
+        # Unpack each kernel
+        parse_kernel(kernel, k_name, bbs)
+
+        # Get total instruction count
+        total = sum([sum(x) for x in bbs])
+
+        # Plot the linear order of each basic block
+        for j in range(len(bbs[0])):
+            indiv_block = [x[j] for x in bbs]
+            indiv_block.sort()
+            plt.title("Basic Block: " + str(j) + " For kernel: " + str(i))
+            plt.scatter(range(len(indiv_block)), indiv_block)
+            plt.savefig("kernel_"+str(i)+"_bb_"+str(j)+".png")
+            plt.close()
+
 
 # Performs clustering using some algorithm
 def cluster_advanced(app, logs):
@@ -253,13 +279,13 @@ def cluster_naive(app, logs, profile):
     for i, kernel in enumerate(logs):
         # Arrays to be filled by parse_kernel
         k_name = []
-        i_counts = []
         bbs = []
 
         # Unpack each kernel
-        parse_kernel(kernel, k_name, i_counts, bbs)
+        parse_kernel(kernel, k_name, bbs)
 
         # Get total instruction count
+        i_counts = [sum(x) for x in bbs]
         total = sum(i_counts)
 
         # Weigh each cluster by instruction count
@@ -291,12 +317,12 @@ def cluster_naive(app, logs, profile):
             tbs_per_cluster.append(math.ceil(sub_grid_tbs * w))
 
         # Choose sequential for now
-        ssp_clusters = [[] for x in tbs_per_cluster]
+        ssp_clusters = []
         remaining_tbs = sub_grid_tbs
         while remaining_tbs > 0:
             for j, tbs in enumerate(tbs_per_cluster):
                 for k in range(min(int(tbs), len(clusters[j]))):
-                    ssp_clusters[j].append(clusters[j][k])
+                    ssp_clusters.append(clusters[j][k])
                     remaining_tbs -= 1
                     if remaining_tbs == 0:
                         break
@@ -304,11 +330,12 @@ def cluster_naive(app, logs, profile):
                     break
             break
 
-        print(k_name[0].rstrip())
-        print(grids[i][0] * grids[i][1] * grids[i][2])
-        print(weighted_values)
-        print(tbs_per_cluster)
-        print(ssp_clusters)
+        ssp_clusters.sort()
+        with open(str(i+1) + ".txt", "w+") as f:
+            f.write(str(len(ssp_clusters)) + '\n')
+            for tb in ssp_clusters:
+                f.write(str(tb) + " ")
+
 
 # Find all the log files and create a dict of apps and file paths
 def get_logs(i_dir, execs, app_logs, app_prof):
@@ -344,7 +371,7 @@ def main():
     # the benchmarks
     if len(argv) == 1:
         launch_benchmarks(yaml_dict)
-
+    """
     for i_dir in i_dirs:
         # Create a dict of app names keys and list of log file value
         app_logs = {}
@@ -362,9 +389,9 @@ def main():
         for app, logs in app_logs.items():
             if "irregular" in i_dir:
                 continue
-                cluster_advanced(app, logs)
+                #cluster_advanced(app, logs)
             elif "regular" in i_dir:
                 cluster_naive(app, logs, app_prof[app])
-
+    """
 if __name__ == "__main__":
     main()
