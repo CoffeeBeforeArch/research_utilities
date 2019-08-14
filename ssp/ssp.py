@@ -237,7 +237,6 @@ def max_tbs():
 def plot_irregular(app, logs):
     # Unpack each kernel
     for i, kernel in enumerate(logs):
-        print(app)
         # Arrays to be filled by parse_kernel
         k_name = []
         bbs = []
@@ -246,8 +245,11 @@ def plot_irregular(app, logs):
         parse_kernel(kernel, k_name, bbs)
 
         # Get total instruction count
-        total = sum([sum(x) for x in bbs])
+        total = [sum(x) for x in bbs]
 
+        values,counts= np.unique(i_counts, return_counts=True)
+        print(counts)
+        return
         # Plot the linear order of each basic block
         for j in range(len(bbs[0])):
             indiv_block = [x[j] for x in bbs]
@@ -369,9 +371,9 @@ def main():
 
     # If we are not analyzing a specific directory, go ahead and run
     # the benchmarks
-    if len(argv) == 1:
-        launch_benchmarks(yaml_dict)
-    """
+    #if len(argv) == 1:
+    #    launch_benchmarks(yaml_dict)
+
     for i_dir in i_dirs:
         # Create a dict of app names keys and list of log file value
         app_logs = {}
@@ -388,10 +390,13 @@ def main():
         # Unpack the files
         for app, logs in app_logs.items():
             if "irregular" in i_dir:
+                plot_irregular(app, logs)
                 continue
                 #cluster_advanced(app, logs)
             elif "regular" in i_dir:
+                plot_irregular(app, logs)
+                continue
                 cluster_naive(app, logs, app_prof[app])
-    """
+
 if __name__ == "__main__":
     main()
